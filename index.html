@@ -4,37 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QiuQiu Chip Simulator</title>
-
-<!-- ==== ZONE ID FINAL ==== -->
-<script>
-  const MONETAG_ZONE_ID = '10564685'; // Zone ID Monetag final
-  const MONETAG_SDK_FUNC = 'show_' + MONETAG_ZONE_ID;
-</script>
-
-<script src="//libtl.com/sdk.js" data-zone="" data-sdk=""></script>
-<script>
-  // Update data-zone & data-sdk otomatis saat load
-  document.addEventListener("DOMContentLoaded", () => {
-    let sdkScript = document.querySelector('script[src="//libtl.com/sdk.js"]');
-    sdkScript.setAttribute('data-zone', MONETAG_ZONE_ID);
-    sdkScript.setAttribute('data-sdk', MONETAG_SDK_FUNC);
-  });
-</script>
-
 <style>
-body { margin: 0; font-family: Arial, sans-serif; background: radial-gradient(circle at top, #1b1b1b, #000); color: #fff; text-align: center; }
-.container { max-width: 420px; margin: auto; padding: 20px; }
-.card { background: #111; border-radius: 16px; padding: 20px; box-shadow: 0 0 20px rgba(255,215,0,.15); }
-h1 { color: gold; margin-bottom: 5px; }
-.rank { font-weight: bold; color: #00eaff; }
-.chip { font-size: 26px; color: gold; margin: 10px 0; }
-button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #1b1b1b, #000);
+  color: #fff;
+  text-align: center;
+}
+.container {
+  max-width: 420px;
+  margin: auto;
+  padding: 20px;
+}
+.card {
+  background: #111;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 0 20px rgba(255,215,0,.15);
+}
+h1 {
+  color: gold;
+  margin-bottom: 5px;
+}
+.rank {
+  font-weight: bold;
+  color: #00eaff;
+}
+.chip {
+  font-size: 26px;
+  color: gold;
+  margin: 10px 0;
+}
+button {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
 .play { background: gold; }
 .daily { background: #00eaff; }
 .reset { background: #ff4d4d; }
-.anim { font-size: 22px; height: 30px; margin: 10px 0; }
-.leaderboard { margin-top: 15px; text-align: left; font-size: 14px; }
-.online { font-size: 13px; color: #0f0; margin-top: 10px; }
+.anim {
+  font-size: 22px;
+  height: 30px;
+  margin: 10px 0;
+}
+.leaderboard {
+  margin-top: 15px;
+  text-align: left;
+  font-size: 14px;
+}
+.online {
+  font-size: 13px;
+  color: #0f0;
+  margin-top: 10px;
+}
 </style>
 </head>
 <body>
@@ -44,6 +73,7 @@ button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius:
     <h1>QiuQiu</h1>
     <div class="rank" id="rank">Rank: Bronze</div>
     <div class="chip" id="chip">Chip: 1,000</div>
+
     <div class="anim" id="anim"></div>
 
     <button class="play" onclick="play()">🎲 Play</button>
@@ -60,103 +90,6 @@ button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius:
 </div>
 
 <script>
-let chip = localStorage.getItem("chip") ? parseInt(localStorage.getItem("chip")) : 1000;
-let lastDaily = localStorage.getItem("daily") || 0;
-
-function rankName(c){
-  if(c < 5000) return "Bronze";
-  if(c < 15000) return "Silver";
-  if(c < 50000) return "Gold";
-  if(c < 150000) return "Platinum";
-  return "Diamond";
-}
-
-function update(){
-  document.getElementById("chip").innerText = "Chip: " + chip.toLocaleString();
-  document.getElementById("rank").innerText = "Rank: " + rankName(chip);
-  localStorage.setItem("chip", chip);
-}
-
-function play(){
-  let win = Math.random() > 0.5;
-  let anim = document.getElementById("anim");
-  if(win){
-    let gain = Math.floor(Math.random()*500)+200;
-    chip += gain;
-    anim.innerText = "🎉 WIN +" + gain;
-    anim.style.color = "#0f0";
-  } else {
-    let lose = Math.floor(Math.random()*300)+100;
-    chip -= lose;
-    if(chip < 0) chip = 0;
-    anim.innerText = "💀 LOSE -" + lose;
-    anim.style.color = "#f00";
-  }
-  update();
-}
-
-// ==== Rewarded Ad ==== 
-function showRewardedAd(callback){
-  try {
-    window[MONETAG_SDK_FUNC]().then(() => {
-      callback();
-      alert('You have seen an ad!');
-    }).catch(() => {
-      alert('Ad gagal dimuat, coba lagi nanti.');
-    });
-  } catch(e){
-    alert('Iklan belum siap. Pastikan SDK Monetag sudah benar.');
-  }
-}
-
-function daily(){
-  let now = Date.now();
-  if(now - lastDaily < 86400000){
-    alert("Daily reward sudah diambil!");
-    return;
-  }
-  showRewardedAd(() => {
-    chip += 2000;
-    lastDaily = now;
-    localStorage.setItem("daily", now);
-    update();
-    alert("🎁 +2000 Chip!");
-  });
-}
-
-function resetSeason(){
-  if(confirm("Reset season & leaderboard?")){
-    showRewardedAd(() => {
-      chip = 1000;
-      localStorage.clear();
-      update();
-    });
-  }
-}
-
-function fakeOnline(){
-  document.getElementById("online").innerText =
-    "🟢 Online: " + (Math.floor(Math.random()*900)+1000);
-}
-
-function leaderboard(){
-  let lb = document.getElementById("lb");
-  lb.innerHTML = "";
-  for(let i=1;i<=5;i++){
-    let li = document.createElement("li");
-    li.innerText = "Player" + i + " - " + (chip + Math.floor(Math.random()*5000));
-    lb.appendChild(li);
-  }
-}
-
-setInterval(fakeOnline, 2000);
-setInterval(leaderboard, 3000);
-
-update();
-</script>
-
-</body>
-</html>
 let chip = localStorage.getItem("chip") ? parseInt(localStorage.getItem("chip")) : 1000;
 let lastDaily = localStorage.getItem("daily") || 0;
 
