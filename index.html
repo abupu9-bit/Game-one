@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QiuQiu Chip Simulator</title>
+
+<!-- Telegram WebApp -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
 body {
   margin: 0;
@@ -23,19 +27,10 @@ body {
   padding: 20px;
   box-shadow: 0 0 20px rgba(255,215,0,.15);
 }
-h1 {
-  color: gold;
-  margin-bottom: 5px;
-}
-.rank {
-  font-weight: bold;
-  color: #00eaff;
-}
-.chip {
-  font-size: 26px;
-  color: gold;
-  margin: 10px 0;
-}
+h1 { color: gold; margin-bottom: 5px; }
+.user { font-size: 13px; color: #aaa; }
+.rank { font-weight: bold; color: #00eaff; }
+.chip { font-size: 26px; color: gold; margin: 10px 0; }
 button {
   width: 100%;
   padding: 14px;
@@ -66,13 +61,15 @@ button {
 }
 </style>
 </head>
+
 <body>
 
 <div class="container">
   <div class="card">
     <h1>QiuQiu</h1>
-    <div class="rank" id="rank">Rank: Bronze</div>
-    <div class="chip" id="chip">Chip: 1,000</div>
+    <div class="user" id="user"></div>
+    <div class="rank" id="rank"></div>
+    <div class="chip" id="chip"></div>
 
     <div class="anim" id="anim"></div>
 
@@ -89,10 +86,40 @@ button {
   </div>
 </div>
 
-<script>
-let chip = localStorage.getItem("chip") ? parseInt(localStorage.getItem("chip")) : 1000;
-let lastDaily = localStorage.getItem("daily") || 0;
+<!-- Monetag Rewarded Interstitial -->
+<script src="//libtl.com/sdk.js"
+  data-zone="10564685"
+  data-sdk="show_10564685">
+</script>
 
+<script>
+/* ===============================
+   TELEGRAM USER
+================================ */
+const tg = window.Telegram.WebApp;
+tg.ready();
+
+const user = tg.initDataUnsafe?.user;
+const userId = user?.id || "guest";
+const username = user?.username || user?.first_name || "Guest";
+
+document.getElementById("user").innerText = "👤 " + username;
+
+/* ===============================
+   STORAGE KEY PER USER
+================================ */
+const chipKey = "chip_" + userId;
+const dailyKey = "daily_" + userId;
+
+let chip = localStorage.getItem(chipKey)
+  ? parseInt(localStorage.getItem(chipKey))
+  : 1000;
+
+let lastDaily = localStorage.getItem(dailyKey) || 0;
+
+/* ===============================
+   HELPER
+================================ */
 function rankName(c){
   if(c < 5000) return "Bronze";
   if(c < 15000) return "Silver";
@@ -104,12 +131,31 @@ function rankName(c){
 function update(){
   document.getElementById("chip").innerText = "Chip: " + chip.toLocaleString();
   document.getElementById("rank").innerText = "Rank: " + rankName(chip);
-  localStorage.setItem("chip", chip);
+  localStorage.setItem(chipKey, chip);
 }
 
+/* ===============================
+   MONETAG REWARDED
+================================ */
+function showRewardedAd(onSuccess){
+  if (typeof window.show_10564685 === "function") {
+    show_10564685()
+      .then(() => { onSuccess(); })
+      .catch(() => {
+        alert("Iklan gagal dimuat, coba lagi.");
+      });
+  } else {
+    alert("Ads belum siap.");
+  }
+}
+
+/* ===============================
+   GAME LOGIC
+================================ */
 function play(){
   let win = Math.random() > 0.5;
   let anim = document.getElementById("anim");
+
   if(win){
     let gain = Math.floor(Math.random()*500)+200;
     chip += gain;
@@ -131,21 +177,31 @@ function daily(){
     alert("Daily reward sudah diambil!");
     return;
   }
-  chip += 2000;
-  lastDaily = now;
-  localStorage.setItem("daily", now);
-  update();
-  alert("🎁 +2000 Chip!");
+
+  showRewardedAd(() => {
+    chip += 2000;
+    lastDaily = now;
+    localStorage.setItem(dailyKey, now);
+    update();
+    alert("🎁 +2000 Chip!");
+  });
 }
 
 function resetSeason(){
-  if(confirm("Reset season & leaderboard?")){
-    chip = 1000;
-    localStorage.clear();
-    update();
+  if(confirm("Reset chip kamu?")){
+    showRewardedAd(() => {
+      chip = 1000;
+      localStorage.removeItem(chipKey);
+      localStorage.removeItem(dailyKey);
+      update();
+      alert("Season berhasil di-reset!");
+    });
   }
 }
 
+/* ===============================
+   FAKE DATA
+================================ */
 function fakeOnline(){
   document.getElementById("online").innerText =
     "🟢 Online: " + (Math.floor(Math.random()*900)+1000);
@@ -156,7 +212,8 @@ function leaderboard(){
   lb.innerHTML = "";
   for(let i=1;i<=5;i++){
     let li = document.createElement("li");
-    li.innerText = "Player" + i + " - " + (chip + Math.floor(Math.random()*5000));
+    li.innerText = "Player" + i + " - " +
+      (chip + Math.floor(Math.random()*5000)).toLocaleString();
     lb.appendChild(li);
   }
 }
